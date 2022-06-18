@@ -1,0 +1,49 @@
+<?php
+include "connection.php";
+session_start();
+$nama_pembeli  = $_POST['nama_pembeli'];
+$no_hp  = $_POST['no_hp'];
+$alamat  = $_POST['alamat'];
+$kecamatan  = $_POST['kecamatan'];
+$kota  = $_POST['kota'];
+$total_transaksi = $_SESSION['total_transaksi'];
+
+if ($nama_pembeli != '' || $no_hp != '' || $alamat != '' || $kecamatan != '' || $kota != '') {
+    // query SQL untuk insert data
+    $query = "INSERT INTO penjualan SET nama_pembeli='$nama_pembeli', no_hp='$no_hp', alamat='$alamat', kota ='$kota', kecamatan = '$kecamatan', total_transaksi = '$total_transaksi' ";
+    $result = mysqli_query($conn, $query);
+    $i = 0;
+    $queryCari = "SELECT id_penjualan FROM penjualan WHERE nama_pembeli = '$nama_pembeli' ORDER BY id_penjualan DESC LIMIT 1";
+    $resultCari = $conn->query($queryCari);
+    $cari = $resultCari->fetch_assoc();
+    $_SESSION['id_transaksi'] = $cari['id_penjualan'];
+    while ($i < count($_SESSION['nama_kursus'])) :
+        $id_kursus = $_SESSION['id_kursus'][$i];
+        $jumlah_jual = $_SESSION['kapasitas_kursus'][$i];
+        $harga_jual = $_SESSION['harga_kursus'][$i];
+        $query2 = "INSERT INTO jual SET id_penjualan = " . $cari['id_penjualan'] . ", id_kursus = $id_kursus, jumlah_jual = $jumlah_jual, harga_jual = $harga_jual";
+        $query3 = "UPDATE kursus SET kapasitas_kursus = kapasitas_kursus - $jumlah_jual WHERE id_kursus='$id_kursus'";
+        $resultInsert = mysqli_query($conn, $query2);
+        $resultUpdate = mysqli_query($conn, $query3);
+        $i = $i + 1;
+    endwhile;
+
+    if ($result) {
+        if ($resultInsert) {
+            if ($resultUpdate) {
+                unset($_SESSION['id_kursus']);
+                unset($_SESSION['nama_kursus']);
+                unset($_SESSION['harga_kursus']);
+                unset($_SESSION['kapasitas_kursus']);
+                unset($_SESSION['total_transaksi']);
+                header('Location:invoice.php');
+            } else {
+                echo "update error";
+            }
+        } else {
+            echo "insert error";
+        }
+    } else {
+        echo "Input Gagal";
+    }
+}
